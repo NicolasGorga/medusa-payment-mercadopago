@@ -66,13 +66,38 @@ Receive payments on your Medusa commerce application using Mercado Pago.
     {
       resolve: `@NicolasGorga/medusa-payment-mercadopago`,
       options: {
-        accessToken: process.env.ACCESS_TOKEN,
-        webhookSecret: process.env.WEBHOOK_SECRET,
+        accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
+        webhookSecret: process.env.MERCADOPAGO_WEBHOOK_SECRET,
       },
     },
   ]
   }
   ```
+
+4\.  In `medusa-config.ts` add the following to the `modules` array in your project config object:
+
+```js
+  modules: [
+    {
+      resolve: '@medusajs/medusa/payment',
+      options: {
+        providers: [
+          {
+            resolve: '@NicolasGorga/medusa-payment-mercadopago/providers/mercado-pago',
+            id: 'mercadopago',
+            options: {
+              accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
+              webhookSecret: process.env.MERCADOPAGO_WEBHOOK_SECRET,
+            },
+            dependencies: [
+              ContainerRegistrationKeys.LOGGER
+            ]
+          }
+        ],
+      }
+    }
+  ],
+```
 
 ---
 
