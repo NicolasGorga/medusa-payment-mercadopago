@@ -1,8 +1,8 @@
-# @NicolasGorga/medusa-payment-mercadopago
+# @nicogorga/medusa-payment-mercadopago
 
 Receive payments on your Medusa commerce application using Mercado Pago.
 
-[Medusa Website](https://medusajs.com/) | [Medusa Repository](https://github.com/medusajs/medusa)
+[Medusa Payment Mercadopago Repository](https://github.com/NicolasGorga/medusa-payment-mercadopago) | [Medusa Website](https://medusajs.com/) | [Medusa Repository](https://github.com/medusajs/medusa)
 
 > [!WARNING]
 > This plugin is a WIP and has only been tested for Credit / Debit Card methods following Mercado Pago docs for Uruguay. You can sumbit issues through [GitHub Issues](https://github.com/NicolasGorga/medusa-payment-mercadopago/issues). Feel free to make contributions by making pull requests and proposing ideas / new flows to implement via [Discussions](https://github.com/NicolasGorga/medusa-payment-mercadopago/discussions)
@@ -45,7 +45,7 @@ Receive payments on your Medusa commerce application using Mercado Pago.
 1\. Run the following command in the directory of the Medusa backend using your package manager (for example for npm):
 
   ```bash
-  npm install @NicolasGorga/medusa-payment-mercadopago
+  npm install @nicogorga/medusa-payment-mercadopago
   ```
 
 2\. Set the following environment variables in `.env`:
@@ -64,7 +64,7 @@ Receive payments on your Medusa commerce application using Mercado Pago.
     plugins = [
     // ...
     {
-      resolve: `@NicolasGorga/medusa-payment-mercadopago`,
+      resolve: `@nicogorga/medusa-payment-mercadopago`,
       options: {
         accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
         webhookSecret: process.env.MERCADOPAGO_WEBHOOK_SECRET,
@@ -83,7 +83,7 @@ Receive payments on your Medusa commerce application using Mercado Pago.
       options: {
         providers: [
           {
-            resolve: '@NicolasGorga/medusa-payment-mercadopago/providers/mercado-pago',
+            resolve: '@nicogorga/medusa-payment-mercadopago/providers/mercado-pago',
             id: 'mercadopago',
             options: {
               accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
