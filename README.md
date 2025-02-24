@@ -36,7 +36,7 @@ Receive payments on your Medusa commerce application using Mercado Pago.
   - Go to your Medusa backend, run `yarn dev` and in a separate terminal `ngrok http 9000`. If you are serving the backend in a port other than 9000, change the last argument accordingly.
     - Your localhost will be exposed by a URL like: `https://d76b-2800-a4-15d2-2900-1105-b8e5-c64-7697.ngrok-free.app`.
     - Grab the generated URL and go to Mercado Pago webhook configuration. Under "URL para prueba", specify `[ngrok URL]/hooks/payment/mercadopago_mercadopago`, replaceing `ngrok URL` accordingly
-- A frontend that integrates [Payment brick](https://www.mercadopago.com.uy/developers/es/docs/checkout-bricks/payment-brick/introduction)  
+- A frontend that integrates [Payment brick](https://www.mercadopago.com.uy/developers/es/docs/checkout-bricks/payment-brick/introduction). I suggest you clone this [Storefront](https://github.com/NicolasGorga/medusa-payment-mercadopago-storefront)  
 
 ---
 
@@ -111,7 +111,7 @@ Receive payments on your Medusa commerce application using Mercado Pago.
 
 2\. Enable Mercadopago in a [region in the admin](https://docs.medusajs.com/resources/references/payment/provider#5-test-it-out). Alternatively, you can use the [Admin APIs](https://docs.medusajs.com/api/admin#regions_postregionsid).
 
-3\. Place an order using a frontend that collects payment data using [Mercadopago Payment brick](https://www.mercadopago.com.uy/developers/es/docs/checkout-bricks/payment-brick/introduction). Send a POST to `localhost:9000/store/mercadopago/payment` with a body that adheres to [validator](https://github.com/NicolasGorga/medusa-payment-mercadopago/blob/master/src/api/store/mercadopago/payment/validators.ts)
+3\. Place an order using a frontend that collects payment data using [Mercadopago Payment brick](https://www.mercadopago.com.uy/developers/es/docs/checkout-bricks/payment-brick/introduction) like [this](https://github.com/NicolasGorga/medusa-payment-mercadopago-storefront). Send a POST to `localhost:9000/store/mercadopago/payment` with a body that adheres to [validator](https://github.com/NicolasGorga/medusa-payment-mercadopago/blob/master/src/api/store/mercadopago/payment/validators.ts)
 
 ---
 
