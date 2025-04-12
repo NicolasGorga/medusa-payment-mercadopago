@@ -52,9 +52,9 @@ Receive payments on your Medusa commerce application using Mercado Pago.
 
   ```bash
   # Access Token available in your Mercado Pago application Test Credentials section
-  ACCESS_TOKEN=
+  MERCADOPAGO_ACCESS_TOKEN=
   # (Optional) Webhook secret available in your Mercado Pago application Webhooks section
-  WEBHOOK_SECRET=
+  MERCADOPAGO_WEBHOOK_SECRET=
   ```
 
 3\. In `medusa-config.ts` add the following at the end of the `plugins` array in your project config object:
