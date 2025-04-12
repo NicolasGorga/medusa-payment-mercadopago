@@ -12,4 +12,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgraded to Medusa 2.6.1
 - Added Changelog and automatic releases
 - Corrected Readme
+- Fixed race condition between completeCartWorkflow and getWebhookActionAndData that caused payment.data to be cleared
 
