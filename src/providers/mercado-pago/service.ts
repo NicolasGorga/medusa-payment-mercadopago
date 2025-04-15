@@ -13,27 +13,35 @@ import {
   CancelPaymentOutput,
   CapturePaymentInput,
   CapturePaymentOutput,
+  CreateAccountHolderInput,
+  CreateAccountHolderOutput,
   DeletePaymentInput,
   DeletePaymentOutput,
   GetPaymentStatusInput,
   GetPaymentStatusOutput,
   InitiatePaymentInput,
   InitiatePaymentOutput,
+  ListPaymentMethodsInput,
+  ListPaymentMethodsOutput,
+  PaymentCustomerDTO,
   ProviderWebhookPayload,
   RefundPaymentInput,
   RefundPaymentOutput,
   RetrievePaymentInput,
   RetrievePaymentOutput,
+  SavePaymentMethodInput,
+  SavePaymentMethodOutput,
   UpdatePaymentInput,
   UpdatePaymentOutput,
   WebhookActionResult,
 } from "@medusajs/types";
-import MercadoPagoConfig, { Payment, PaymentRefund } from "mercadopago";
+import MercadoPagoConfig, { Customer, CustomerCard, Payment, PaymentRefund } from "mercadopago";
 import { PaymentCreateRequest } from "mercadopago/dist/clients/payment/create/types";
 import { PaymentSearchResult } from "mercadopago/dist/clients/payment/search/types";
 import { MercadopagoOptions, MercadopagoWebhookPayload } from "../../types";
 import { createHmac } from "crypto";
 import { Logger } from "@medusajs/medusa";
+import { CustomerRequestBody } from "mercadopago/dist/clients/customer/commonTypes";
 
 type InjectedDependencies = {
   logger: Logger;
@@ -238,6 +246,96 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
     } catch (error) {
       return { action: "failed" };
     }
+  }
+
+  async createAccountHolder?({
+    context
+  }: CreateAccountHolderInput
+  ): Promise<CreateAccountHolderOutput> {
+    const { account_holder, customer, idempotency_key } = context
+
+    const id = account_holder?.data.id as string | undefined
+
+    if (id) {
+      return { id }
+    }
+
+    if (!customer) {
+      throw new MedusaError(MedusaErrorTypes.INVALID_DATA, "No customer provided while creating account holder")
+    }
+
+    try {
+      const customerClient = new Customer(this.client_);
+      const body: CustomerRequestBody = {
+        email: customer.email,
+        first_name: customer.first_name || undefined,
+        last_name: customer.last_name || undefined,
+        date_registered: new Date().toISOString(),
+      };
+
+      const createdCustomer = await customerClient.create({
+        body: body,
+        requestOptions: {
+          idempotencyKey: idempotency_key,
+        },
+      });
+
+      return {
+        id: createdCustomer.id!,
+        data: createdCustomer as unknown as Record<string, unknown>
+      }
+    } catch (error) {
+      throw new MedusaError(MedusaErrorTypes.UNEXPECTED_STATE, "An error occurred while trying to create a Mercado Pago customer")
+    }
+  }
+
+  async savePaymentMethod({
+    context,
+    data,
+  }: SavePaymentMethodInput): Promise<SavePaymentMethodOutput> {
+    const accountHolderId = context?.account_holder?.data?.id as
+      | string
+      | undefined
+
+    if (!accountHolderId) {
+      throw new MedusaError(MedusaErrorTypes.INVALID_DATA, "Account holder not set while saving a payment method")
+    }
+
+    const paymentMethodData = data as PaymentCreateRequest
+
+    const card = new CustomerCard(this.client_)
+
+    const created = await card.create({
+      customerId: accountHolderId,
+      body: { token: paymentMethodData.token, },
+      requestOptions: {
+        idempotencyKey: context?.idempotency_key
+      }
+    })
+
+    return { id: created.id!, data: created as unknown as Record<string, unknown> }
+  }
+
+  async listPaymentMethods({
+    context,
+  }: ListPaymentMethodsInput): Promise<ListPaymentMethodsOutput> {
+    const accountHolderId = context?.account_holder?.data?.id as
+      | string
+      | undefined
+    if (!accountHolderId) {
+      return []
+    }
+
+    const cardClient = new CustomerCard(this.client_)
+
+    const paymentMethods = await cardClient.list({
+      customerId: accountHolderId
+    })
+
+    return paymentMethods.map((method) => ({
+      id: method.id!,
+      data: method as unknown as Record<string, unknown>,
+    }))
   }
 
   async createPayment({
