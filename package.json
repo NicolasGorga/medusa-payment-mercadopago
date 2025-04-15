@@ -13,16 +13,22 @@
     "./.medusa/server/src/modules/*": "./.medusa/server/src/modules/*/index.js",
     "./modules/*": "./.medusa/server/src/modules/*/index.js",
     "./providers/*": "./.medusa/server/src/providers/*/index.js",
+    "./admin": {
+      "import": "./.medusa/server/src/admin/index.mjs",
+      "require": "./.medusa/server/src/admin/index.js",
+      "default": "./.medusa/server/src/admin/index.js"
+    },
     "./*": "./.medusa/server/src/*.js"
   },
   "keywords": [
     "medusa",
     "plugin",
-    "medusa-plugin-other",
+    "medusa-plugin-integration",
+    "medusa-plugin-payment",
     "medusa-plugin",
     "medusa-v2",
     "mercadopago",
-    "mercado pago",
+    "mercado-pago",
     "payment"
   ],
   "scripts": {
