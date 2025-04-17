@@ -17,18 +17,20 @@ export const GET = async (
   const paymentModuleService = req.scope.resolve(Modules.PAYMENT);
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY);
 
-  const { data: accountHolders } = await query.graph({
+  const { data } = await query.graph({
     entity: "customer_account_holder",
     fields: req.queryConfig.fields,
     filters: {
-      customer_id: req.auth_context.actor_id,
+      customer_id: req.auth_context?.actor_id,
     },
   });
 
   // Since we can't apply this filter when querying the pivot table, we do it in memory
-  const accountHolder = accountHolders.filter(
-    (holder) => holder.provider_id === provider_id
-  );
+  const [accountHolder] = data
+  .filter(
+    (customerAccountHolder) => customerAccountHolder.account_holder?.provider_id === provider_id
+  )
+  .map(customerAccountHolder => customerAccountHolder.account_holder);
 
   const paymentMethods = await paymentModuleService.listPaymentMethods({
     provider_id,

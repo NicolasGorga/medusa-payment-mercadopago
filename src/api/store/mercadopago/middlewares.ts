@@ -13,7 +13,7 @@ export const mercadopagoMiddlewares: MiddlewareRoute[] = [
     },
     {
         matcher: '/store/mercadopago/payment-methods',
-        method: 'POST',
+        method: 'GET',
         middlewares: [
             validateAndTransformQuery(GetStoreMercadopagoPaymentMethodsParams, listPaymentmethodsQueryConfig)
         ]
