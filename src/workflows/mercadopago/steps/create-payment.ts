@@ -6,10 +6,11 @@ import {
   MedusaErrorTypes,
   Modules,
 } from "@medusajs/framework/utils";
+import { PostStoreMercadopagoPaymentType } from "../../../api/store/mercadopago/payment/validators";
 
 type CreatePaymentStepInput = {
   paymentSessionId: string;
-  paymentData: PaymentCreateRequest;
+  paymentData: PostStoreMercadopagoPaymentType['paymentData'];
 };
 
 export const createPaymentStep = createStep<
