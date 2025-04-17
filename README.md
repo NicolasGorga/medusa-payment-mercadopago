@@ -12,6 +12,7 @@ Receive payments on your Medusa commerce application using Mercado Pago.
 - Mercado Pago integration via Checkout API
 - Payments created asynchronously via webhook event.
 - Payments automatically captured (so far as for Uruguay, Credit / Debit is auto capture)
+- Customers and Cards automatically saved to Mercado Pago, so you can implement saved cards in the frontend
 
 ---
 
