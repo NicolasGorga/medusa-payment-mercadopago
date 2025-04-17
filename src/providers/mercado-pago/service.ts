@@ -31,6 +31,8 @@ import {
   RetrievePaymentOutput,
   SavePaymentMethodInput,
   SavePaymentMethodOutput,
+  UpdateAccountHolderInput,
+  UpdateAccountHolderOutput,
   UpdatePaymentInput,
   UpdatePaymentOutput,
   WebhookActionResult,
@@ -42,6 +44,8 @@ import { MercadopagoOptions, MercadopagoWebhookPayload } from "../../types";
 import { createHmac } from "crypto";
 import { Logger } from "@medusajs/medusa";
 import { CustomerRequestBody } from "mercadopago/dist/clients/customer/commonTypes";
+import { CustomerUpdateData } from "mercadopago/dist/clients/customer/update/types";
+import { PostStoreMercadopagoPaymentType } from "../../api/store/mercadopago/payment/validators";
 
 type InjectedDependencies = {
   logger: Logger;
@@ -121,7 +125,7 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
     data = results[0] ?? data;
 
     // Returning PaymentSessionStatus.CAPTURED for auto capture, since for UY card method they are captured automatically
-    // Should make it conditionally in cases where a method could be not auto captur ed (maybe cash or another country)
+    // TODO: Should make it conditionally in cases where a method could be not auto captured (maybe cash or another country)
     return {
       data: data,
       status: PaymentSessionStatus.CAPTURED,
@@ -131,12 +135,7 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
   async capturePayment(
     input: CapturePaymentInput
   ): Promise<CapturePaymentOutput> {
-    if (!input.data) {
-      throw new MedusaError(
-        MedusaErrorTypes.INVALID_DATA,
-        "No data found in input for capture payment"
-      );
-    }
+    // For now, we assume auto capture, so no need to do anything else with Mercado Pago
     return { data: input.data };
   }
 
@@ -201,7 +200,8 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
   }
 
   updatePayment(input: UpdatePaymentInput): Promise<UpdatePaymentOutput> {
-    // Until working with preferences, we won't have a need for this method
+    // TODO: Until working with preferences, we won't have a need for this method. After including preferences, it should update preference items and total amount
+    // when items are added / removed from cart
     return Promise.resolve({ data: input.data });
   }
 
@@ -289,6 +289,52 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
     }
   }
 
+  async updateAccountHolder({
+    context,
+  }: UpdateAccountHolderInput): Promise<UpdateAccountHolderOutput> {
+    const { account_holder, customer, idempotency_key } = context
+
+    const accountHolderId = account_holder.data?.id as string | undefined
+
+    if (!accountHolderId) {
+      throw new MedusaError(MedusaErrorTypes.INVALID_DATA, "No account holder provided while updating account holder")
+    }
+
+    // No customer, nothing to upodate with third party
+    if (!customer) {
+      return {}
+    }
+
+    try {
+      const customerClient = new Customer(this.client_);
+      const body: CustomerRequestBody = {
+        first_name: customer.first_name ?? undefined,
+        last_name: customer.last_name ?? undefined,
+        phone: { number: customer.phone ?? undefined },
+        identification: account_holder.data.identification ?? undefined,
+      }
+      if (!account_holder.data.email) {
+        body.email = customer.email
+      }
+
+      const payload: CustomerUpdateData = {
+        customerId: accountHolderId,
+        body: body,
+        requestOptions: {
+          idempotencyKey: idempotency_key,
+        }
+      } 
+
+      const updatedCustomer = await customerClient.update(payload);
+
+      return {
+        data: updatedCustomer as unknown as Record<string, unknown>,
+      }
+    } catch (e) {
+      throw new MedusaError(MedusaErrorTypes.UNEXPECTED_STATE, "An error occurred in updateAccountHolder when updating a Stripe customer")
+    }
+  }
+
   async savePaymentMethod({
     context,
     data,
@@ -305,9 +351,13 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
 
     const card = new CustomerCard(this.client_)
 
+    // I opened a support ticket with Mercado Pago, as this call randomly fails or succeeds
+    // for now, the step that calls this method has a try / catch, to allow the Payment to cotinue even if this fails
     const created = await card.create({
       customerId: accountHolderId,
-      body: { token: paymentMethodData.token, },
+      body: { 
+        token: paymentMethodData.token, 
+      },
       requestOptions: {
         idempotencyKey: context?.idempotency_key
       }
@@ -343,7 +393,7 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
     payload,
   }: {
     paymentSessionId: string;
-    payload: PaymentCreateRequest;
+    payload: PostStoreMercadopagoPaymentType['paymentData'];
   }) {
     const payment = new Payment(this.client_);
     return payment.create({
