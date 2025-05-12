@@ -7,6 +7,7 @@ import {
   Modules,
 } from "@medusajs/framework/utils";
 import { PostStoreMercadopagoPaymentType } from "../../../api/store/mercadopago/payment/validators";
+import { PaymentSessionDTO } from "@medusajs/framework/types";
 
 type CreatePaymentStepInput = {
   paymentSessionId: string;
@@ -15,7 +16,7 @@ type CreatePaymentStepInput = {
 
 export const createPaymentStep = createStep<
   CreatePaymentStepInput,
-  void,
+  PaymentSessionDTO,
   undefined
 >(
   "create-mercado-pago-payment",
@@ -50,12 +51,12 @@ export const createPaymentStep = createStep<
       payload: paymentData,
     });
     
-    await paymentModuleService.updatePaymentSession({
+    const updatedSession = await paymentModuleService.updatePaymentSession({
       id: paymentSessionId,
       amount: paymentSession.amount,
       currency_code: paymentSession.currency_code,
       data: paymentResponse as unknown as Record<string, unknown>,
     });
-    return new StepResponse();
+    return new StepResponse(updatedSession);
   }
 );
