@@ -46,6 +46,7 @@ import { Logger } from "@medusajs/medusa";
 import { CustomerRequestBody } from "mercadopago/dist/clients/customer/commonTypes";
 import { CustomerUpdateData } from "mercadopago/dist/clients/customer/update/types";
 import { PostStoreMercadopagoPaymentType } from "../../api/store/mercadopago/payment/validators";
+import { PaymentResponse } from "mercadopago/dist/clients/payment/commonTypes";
 
 type InjectedDependencies = {
   logger: Logger;
@@ -152,21 +153,25 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
   async getPaymentStatus(
     input: GetPaymentStatusInput
   ): Promise<GetPaymentStatusOutput> {
-    const paymentId = input.data?.id;
-    const payment = new Payment(this.client_);
-    const paymentData = await payment.get({ id: paymentId as string });
-    const status = paymentData.status;
+    let status = input.data?.status as string;
+
+    if (!status) {
+      const paymentId = input.data?.id;
+      const payment = new Payment(this.client_);
+      const paymentData = await payment.get({ id: paymentId as string });
+      status = paymentData.status || ""
+    }
 
     switch (status) {
       case "authorized":
         return { status: "authorized" };
       case "approved":
-      case "in_mediation":
         return { status: "captured" };
-
       case "cancelled":
       case "refunded":
         return { status: "canceled" };
+      case "rejected":
+        return { status: "error"}
       default:
         return { status: "pending" };
     }
@@ -396,12 +401,44 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
     payload: PostStoreMercadopagoPaymentType['paymentData'];
   }) {
     const payment = new Payment(this.client_);
-    return payment.create({
+    const paymentResponse = await payment.create({
       body: {
         ...payload,
         external_reference: paymentSessionId,
       },
     });
+
+    const errorMessage = this.sanitizeErrorMessage(paymentResponse)
+    if (errorMessage) {
+      paymentResponse["error_message"] = errorMessage
+    }
+    return paymentResponse
+  }
+
+  protected sanitizeErrorMessage(payment: PaymentResponse) {
+    const status = payment.status;
+    const statusDetail = payment.status_detail;
+    if (status !== "rejected" || !statusDetail) {
+      return null;
+    }
+
+    switch (statusDetail) {
+      case "cc_rejected_bad_filled_card_number":
+        return "Numero de tarjeta incorrecto.";
+      case "cc_rejected_bad_filled_date":
+        return "Numero de expiracion incorrecto.";
+      case "cc_rejected_bad_filled_security_code":
+        return "Numero de seguridad incorrecto.";
+      case "cc_rejected_insufficient_amount":
+      case "insufficient_amount":
+        return "Saldo insuficiente.";
+      case "cc_rejected_max_attempts":
+        return "Has superado el maximo de intentos, prueba otra tarjeta.";
+      case "rejected_by_bank":
+        return "Tu banco ha rechazado el pago.";
+      default:
+        return "No hemos podido procesar el pago, intenta nuevamente o prueba otra tarjeta.";
+    }
   }
 
   protected validateWebhookSignature(data: ProviderWebhookPayload["payload"]) {
