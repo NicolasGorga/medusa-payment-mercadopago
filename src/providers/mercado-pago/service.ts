@@ -290,7 +290,7 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
         data: createdCustomer as unknown as Record<string, unknown>
       }
     } catch (error) {
-      this.logger_.warn(`An error occurred while trying to create a Mercado Pago customer: ${error}`)
+      throw new MedusaError(MedusaErrorTypes.UNEXPECTED_STATE, "An error occurred while trying to create a Mercado Pago customer")
     }
   }
 
