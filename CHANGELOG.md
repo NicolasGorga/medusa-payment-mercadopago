@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- Check if creating customer in MP fails because it already exists and if so, store it in Medusa
+
+### Fixed
+- Fix authorizePayment, getting the approved payment in case of multiple attempts
+
+## 0.2.1 - 2025-05-12
+### Added
 - New function to get a sanitized error message, based on the status and status_detail retuned in Mercado Pago PaymentResponse object
 - Throw in /store/mercadopago/payment with sanitized error message if payment is rejected
 
