@@ -40,10 +40,10 @@ import {
 import MercadoPagoConfig, { Customer, CustomerCard, Payment, PaymentRefund } from "mercadopago";
 import { PaymentCreateRequest } from "mercadopago/dist/clients/payment/create/types";
 import { PaymentSearchResult } from "mercadopago/dist/clients/payment/search/types";
-import { MercadopagoOptions, MercadopagoWebhookPayload } from "../../types";
+import { MercadopagoError, MercadopagoOptions, MercadopagoWebhookPayload } from "../../types";
 import { createHmac } from "crypto";
 import { Logger } from "@medusajs/medusa";
-import { CustomerRequestBody } from "mercadopago/dist/clients/customer/commonTypes";
+import { CustomerRequestBody, CustomerResponse } from "mercadopago/dist/clients/customer/commonTypes";
 import { CustomerUpdateData } from "mercadopago/dist/clients/customer/update/types";
 import { PostStoreMercadopagoPaymentType } from "../../api/store/mercadopago/payment/validators";
 import { PaymentResponse } from "mercadopago/dist/clients/payment/commonTypes";
@@ -113,11 +113,17 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
 
     const payment = new Payment(this.client_);
     const results =
-      (
+      ((
         await payment.search({
-          options: { external_reference: paymentSessionId },
+          options: { 
+            external_reference: paymentSessionId,
+            sort: 'date_approved',
+            criteria: 'desc'
+          },
         })
-      )?.results ?? [];
+        // Ideally, this would be done in the call to Mercado Pago, but they don't expose an option
+        // to filter based on status
+      )?.results ?? []).filter(payment => payment.status === 'approved');
     if (!results.length) {
       this.logger_.warn(
         `No payment found in Mercado Pago for payment session: ${paymentSessionId}\n This could be caused by lag in Mercado Pago's system and doesn't mean the payment was not created`
@@ -153,27 +159,25 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
   async getPaymentStatus(
     input: GetPaymentStatusInput
   ): Promise<GetPaymentStatusOutput> {
-    let status = input.data?.status as string;
+    const paymentId = input.data?.id;
+    const payment = new Payment(this.client_);
+    const paymentData = await payment.get({ id: paymentId as string }) as unknown as Record<string, unknown>;
 
-    if (!status) {
-      const paymentId = input.data?.id;
-      const payment = new Payment(this.client_);
-      const paymentData = await payment.get({ id: paymentId as string });
-      status = paymentData.status || ""
-    }
-
-    switch (status) {
+    switch (paymentData.status) {
       case "authorized":
-        return { status: "authorized" };
+        return { status: "authorized", data: paymentData };
       case "approved":
-        return { status: "captured" };
+        return { status: "captured", data: paymentData };
       case "cancelled":
       case "refunded":
-        return { status: "canceled" };
+        return { status: "canceled", data: paymentData };
       case "rejected":
-        return { status: "error"}
+        return { status: "error", data: {
+          ...paymentData,
+          error_message: this.sanitizeErrorMessage(paymentData as unknown as PaymentResponse)
+        }}
       default:
-        return { status: "pending" };
+        return { status: "pending", data: paymentData };
     }
   }
 
@@ -269,8 +273,10 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
       throw new MedusaError(MedusaErrorTypes.INVALID_DATA, "No customer provided while creating account holder")
     }
 
+    const customerClient = new Customer(this.client_);
+    let mercadopagoCustomer: CustomerResponse | undefined
+    
     try {
-      const customerClient = new Customer(this.client_);
       const body: CustomerRequestBody = {
         email: customer.email,
         first_name: customer.first_name || undefined,
@@ -278,19 +284,26 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
         date_registered: new Date().toISOString(),
       };
 
-      const createdCustomer = await customerClient.create({
+      mercadopagoCustomer = await customerClient.create({
         body: body,
         requestOptions: {
           idempotencyKey: idempotency_key,
         },
       });
+    } catch (e) {
+      const error = e as MercadopagoError
 
-      return {
-        id: createdCustomer.id!,
-        data: createdCustomer as unknown as Record<string, unknown>
+      if (!!error.cause?.find(c => c.code === '101')) {
+        const { results } = await customerClient.search({ options: { email: customer.email}})
+        mercadopagoCustomer = results![0]
+      } else {
+        throw new MedusaError(MedusaErrorTypes.UNEXPECTED_STATE, "An error occurred while trying to create a Mercado Pago customer")
       }
-    } catch (error) {
-      throw new MedusaError(MedusaErrorTypes.UNEXPECTED_STATE, "An error occurred while trying to create a Mercado Pago customer")
+    }
+
+    return {
+      id: mercadopagoCustomer!.id!,
+      data: mercadopagoCustomer as unknown as Record<string, unknown>
     }
   }
 

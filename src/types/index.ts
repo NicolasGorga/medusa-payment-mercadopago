@@ -16,3 +16,13 @@ export type MercadopagoWebhookPayload = {
         id: string;
     }
 }
+
+export type MercadopagoError = {
+    error: string
+    message: string
+    status: string
+    cause: {
+        code: string
+        description: string
+    }[] | undefined
+}
