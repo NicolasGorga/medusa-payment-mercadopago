@@ -422,9 +422,7 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
     });
 
     const errorMessage = this.sanitizeErrorMessage(paymentResponse)
-    if (errorMessage) {
-      paymentResponse["error_message"] = errorMessage
-    }
+    paymentResponse["error_message"] = errorMessage
     return paymentResponse
   }
 

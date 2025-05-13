@@ -1,6 +1,6 @@
 {
   "name": "@nicogorga/medusa-payment-mercadopago",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Mercado Pago payment provider plugin for MedusaJS",
   "author": "Nicolas Gorga",
   "license": "MIT",
