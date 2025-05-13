@@ -14,5 +14,5 @@ export const POST = async (req: AuthenticatedMedusaRequest<PostStoreMercadopagoP
         throw new MedusaError(MedusaErrorTypes.PAYMENT_AUTHORIZATION_ERROR, errorMessage)
     }
 
-    return res.status(201).json();
+    return res.status(201).json({});
 }
