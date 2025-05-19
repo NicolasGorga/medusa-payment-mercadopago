@@ -146,14 +146,31 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
     return { data: input.data };
   }
 
-  async cancelPayment(input: CancelPaymentInput): Promise<CancelPaymentOutput> {
-    const paymentId = input.data?.id;
-    if (!paymentId || !isString(paymentId)) {
-      return { data: input.data ?? {} };
+  async cancelPayment({ data, context }: CancelPaymentInput): Promise<CancelPaymentOutput> {
+    try {
+      const id = data?.id as string;
+
+      if (!id) {
+        return { data: data };
+      }
+
+      const { status } = await this.getPaymentStatus({ data: data });
+
+      switch(status) {
+        case 'authorized':
+          const paymentClient = new Payment(this.client_)
+          const paymentResponse = await paymentClient.cancel({ id, requestOptions: { idempotencyKey: context?.idempotency_key }});
+          return { data: paymentResponse as unknown as Record<string, unknown>};
+        case 'captured':
+          const refundClient = new PaymentRefund(this.client_)
+          const refundResponse = await refundClient.total({ payment_id: id, requestOptions: { idempotencyKey: context?.idempotency_key }});
+          return { data: refundResponse as unknown as Record<string, unknown>};
+        default:
+          return { data };
+      }
+    } catch (error) {
+      throw new Error(`An error occurred in cancelPayment: ${error}`);
     }
-    const payment = new Payment(this.client_);
-    const paymentData = await payment.cancel({ id: paymentId });
-    return { data: paymentData as unknown as Record<string, unknown> };
   }
 
   async getPaymentStatus(
@@ -186,14 +203,14 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
     const payment = new Payment(this.client_);
     const paymentData = await payment.get({ id: paymentId });
 
-    const refundAmount = input.amount;
+    const refundAmount = Number(input.amount);
     const isPartial =
-      (paymentData.transaction_amount ?? input.amount) > input.amount;
+      (paymentData.transaction_amount ?? refundAmount) > refundAmount;
     const refund = new PaymentRefund(this.client_);
     const refundData = await refund.create({
       payment_id: paymentId,
       body: {
-        amount: isPartial ? Number(refundAmount) : undefined,
+        amount: isPartial ? refundAmount : undefined,
       },
     });
     return { data: refundData as unknown as Record<string, unknown> };
@@ -495,14 +512,14 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
   }
 
   getIdOrThrow(data?: Record<string, unknown>) {
-    const id = data?.id;
-    if (!id || !isString(id)) {
+    const id = String(data?.id);
+    if (!id) {
       throw new MedusaError(
         MedusaErrorTypes.INVALID_DATA,
         "No valid string stored against 'id' key of data object"
       );
     }
-    return id as string;
+    return id;
   }
 }
 
