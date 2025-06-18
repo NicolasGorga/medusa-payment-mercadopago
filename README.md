@@ -119,3 +119,137 @@ Receive payments on your Medusa commerce application using Mercado Pago.
 ## Additional Resources
 
 - [Mercado Pago Online Payments Docs](https://www.mercadopago.com.uy/developers/es/docs#online-payments)
+
+---
+
+## Redsys Payment Provider
+
+Receive payments on your Medusa commerce application using Redsys, a popular payment gateway in Spain.
+
+> [!WARNING]
+> This plugin is currently under development. Ensure you test thoroughly in the Redsys test environment before enabling it for live transactions.
+
+### Features
+
+-   **Redsys Redirect Integration**: Initiates payments by redirecting the customer to the Redsys payment page.
+-   **Webhook Notifications**: Handles asynchronous payment status updates from Redsys via a dedicated notification endpoint.
+-   **Signature Validation**: Validates incoming notifications using the shared secret key to ensure authenticity.
+
+### Prerequisites
+
+-   **Node.js v20 or greater**.
+-   **A Medusa backend**.
+-   **Redsys Merchant Account**: You must have an active merchant account with Redsys. This will provide you with:
+    -   Merchant Code (Código FUC)
+    -   Terminal Number
+    -   Secret Encryption Key (Clave secreta de encriptación SHA-256)
+-   **Redsys Admin Panel Configuration**:
+    -   **Notification URL (URL de Notificación HTTP)**: You need to configure the "URL de Notificación HTTP" in your Redsys merchant admin panel to point to your Medusa backend's Redsys notification endpoint. The URL will be:
+        `https://<your-medusa-backend-url>/store/redsys/notification`
+        (Replace `<your-medusa-backend-url>` with the actual URL of your deployed Medusa backend). Redsys will send POST requests to this URL to notify Medusa about transaction outcomes. Ensure your backend is accessible from the internet for Redsys to reach this endpoint. For local testing, use a tunneling service like [ngrok](https://ngrok.com/).
+
+### How to Install and Configure
+
+1.  **Install the Plugin Package** (Assuming the plugin is published or installed locally):
+    If this Redsys provider were part of the same `@nicogorga/medusa-payment-mercadopago` package (which it is, as per this project structure), the installation is already covered. If it were a separate package, you'd install it:
+    ```bash
+    # Example if it was a separate package:
+    # npm install medusa-payment-redsys
+    # yarn add medusa-payment-redsys
+    ```
+
+2.  **Set Environment Variables**:
+    Add the following environment variables to your `.env` file. Obtain these credentials from your Redsys merchant account.
+
+    ```bash
+    REDSYS_MERCHANT_CODE=your_fuc_code_here
+    REDSYS_SECRET_KEY=your_sha256_secret_key_here
+    REDSYS_TERMINAL=your_terminal_number_here # Usually "1" or "001"
+    REDSYS_ENVIRONMENT=test # Use 'live' for production
+    # Optional: Default merchant name
+    REDSYS_MERCHANT_NAME="My Medusa Store"
+    # Optional: Default currency for Redsys (e.g., EUR)
+    REDSYS_CURRENCY="EUR"
+    # Optional: Your Medusa backend's root URL for constructing notification/return URLs if not hardcoded
+    # MEDUSA_BACKEND_URL=https://api.yourstore.com
+    ```
+
+3.  **Configure in `medusa-config.js`**:
+    Add the Redsys provider configuration to the `payment` module in your `medusa-config.js` (or `medusa-config.ts`):
+
+    ```javascript
+    // In medusa-config.js or medusa-config.ts
+
+    const modules = [
+      // ... other modules
+      {
+        resolve: "@medusajs/medusa/payment", // or your specific payment module path
+        options: {
+          providers: [
+            // ... other payment providers like mercadopago
+            {
+              resolve: "@nicogorga/medusa-payment-mercadopago/providers/redsys", // Adjust path to where RedsysProviderService is exported
+              id: "redsys", // Unique identifier for this provider
+              options: {
+                merchantCode: process.env.REDSYS_MERCHANT_CODE,
+                secretKey: process.env.REDSYS_SECRET_KEY,
+                terminal: process.env.REDSYS_TERMINAL,
+                environment: process.env.REDSYS_ENVIRONMENT, // 'test' or 'live'
+                // Optional parameters:
+                merchantName: process.env.REDSYS_MERCHANT_NAME || "My Medusa Store",
+                currency: process.env.REDSYS_CURRENCY || "EUR", // Default currency for Redsys
+                // The notification URL is handled by the Medusa endpoint, but you might need to pass your backend base URL
+                // if the provider needs to construct full URLs or for other specific return URLs.
+                // urlNotification: `https://<your-backend-url>/store/redsys/notification`, (Ensure this matches your actual setup)
+                // urlResponse: `https://<your-frontend-url>/order/confirmed`, (Example return URL for customer)
+              },
+              dependencies: [
+                "logger", // Assuming logger is a dependency for RedsysProviderService
+                // Add other dependencies if RedsysProviderService requires them
+              ],
+            },
+          ],
+        },
+      },
+    ];
+
+    // Make sure to export the projectConfig with these modules
+    // export const projectConfig = {
+    //   // ... other configs
+    //   modules,
+    // };
+    ```
+
+    **Explanation of Options:**
+    *   `merchantCode` (Código FUC): Your unique merchant identifier provided by Redsys.
+    *   `secretKey`: The SHA-256 secret key used for signing and verifying requests and responses. **Crucial for security.**
+    *   `terminal`: The terminal number assigned by Redsys (often "1").
+    *   `environment`: Set to `"test"` for the Redsys test environment or `"live"` for production.
+    *   `merchantName` (Optional): The name of your store displayed on the Redsys payment page.
+    *   `currency` (Optional): Default currency to be used if not specified per transaction (e.g., "EUR"). Redsys uses numeric codes in transactions (978 for EUR).
+    *   `urlNotification`: While the endpoint is fixed (`/store/redsys/notification`), you might need to configure the full URL in your Redsys admin panel. The provider itself doesn't usually need this option if Medusa handles routing.
+    *   `urlResponse`: The URL the user is redirected to after completing payment on Redsys. This is usually a page on your frontend.
+
+### Functionality & Limitations
+
+*   **Payment Initiation**: The provider generates the necessary parameters and redirects the user to the Redsys secure payment page.
+*   **Notification Handling**: It processes asynchronous notifications from Redsys to update payment statuses in Medusa. This includes handling successful payments, errors, and potentially other states if Redsys sends them.
+*   **Manual Operations**:
+    *   **Refunds**: Refunds must be initiated manually from your Redsys merchant dashboard. Once Redsys processes the refund and sends a notification (if configured for refunds), Medusa will update the payment status accordingly.
+    *   **Cancellations (Voids)**: Similar to refunds, voiding an authorized (but not yet captured/settled) transaction, or cancelling a captured one (which might be treated as a type of refund by Redsys), must typically be done via the Redsys merchant dashboard. Medusa will reflect the change upon receiving a notification.
+
+### Test the Plugin
+
+1.  **Run your Medusa Backend**:
+    ```bash
+    npm run dev
+    # or
+    yarn dev
+    ```
+2.  **Enable Redsys**: In your Medusa Admin, navigate to Settings > Regions, select a region, and enable the "redsys" payment provider.
+3.  **Redsys Test Environment**: Ensure your Redsys account is configured for the test environment and you have test card numbers provided by Redsys.
+4.  **Initiate Payment**: Using your storefront, proceed to checkout and select Redsys as the payment method. You should be redirected to the Redsys test payment page.
+5.  **Simulate Payment**: Use Redsys test card details to simulate a successful payment, a failed payment, etc.
+6.  **Check Notifications**: Verify that your Medusa backend receives the notification at `/store/redsys/notification` and that the payment status is updated correctly in Medusa (e.g., order is marked as paid). You might need to use a tunneling service like ngrok to expose your local endpoint to Redsys for testing.
+
+Remember to switch `environment` to `"live"` and use your live Redsys credentials when you are ready to go into production.
