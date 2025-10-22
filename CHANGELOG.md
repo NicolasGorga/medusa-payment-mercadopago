@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+- Upgraded to Medusa 2.11.0
+
+### Fixed
+- Error caused when trying to save a payment method when an account holder isn't available, like on guest checkout flow
+
 ## 0.2.5 - 2025-05-19
 ### Changed
 - cancelPayment now checks MP status, to correctly decide if we shold cancel (an authorized payment) or refund (a captured payment)
