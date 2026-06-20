@@ -34,17 +34,21 @@
   "scripts": {
     "build": "medusa plugin:build",
     "dev": "medusa plugin:develop",
+    "lint": "medusa lint",
     "prepublishOnly": "medusa plugin:build"
   },
   "devDependencies": {
-	"@medusajs/admin-sdk": "2.11.0",
-    "@medusajs/cli": "2.11.0",
-    "@medusajs/framework": "2.11.0",
-    "@medusajs/medusa": "2.11.0",
-	"@medusajs/test-utils": "2.11.0",
-    "@medusajs/icons": "2.11.0",
-    "@medusajs/ui": "4.0.4",
+    "@medusajs/admin-sdk": "2.16.0",
+    "@medusajs/cli": "2.16.0",
+    "@medusajs/eslint-plugin": "2.16.0",
+    "@medusajs/framework": "2.16.0",
+    "@medusajs/medusa": "2.16.0",
+    "@medusajs/test-utils": "2.16.0",
+    "@medusajs/icons": "2.16.0",
+    "@medusajs/ui": "4.1.16",
     "@swc/core": "1.5.7",
+    "eslint": "^9.0.0",
+    "jiti": "^2.0.0",
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.2.25",
@@ -57,15 +61,15 @@
     "yalc": "^1.0.0-pre.53"
   },
   "peerDependencies": {
-	"@medusajs/admin-sdk": "2.11.0",
-    "@medusajs/cli": "2.11.0",
-    "@medusajs/framework": "2.11.0",
-    "@medusajs/medusa": "2.11.0",
-    "@medusajs/icons": "2.11.0",
-    "@medusajs/ui": "4.0.3"
+    "@medusajs/admin-sdk": "2.16.0",
+    "@medusajs/cli": "2.16.0",
+    "@medusajs/framework": "2.16.0",
+    "@medusajs/medusa": "2.16.0",
+    "@medusajs/icons": "2.16.0",
+    "@medusajs/ui": "4.1.16"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19"
   },
   "dependencies": {
     "mercadopago": "^2.3.0"
