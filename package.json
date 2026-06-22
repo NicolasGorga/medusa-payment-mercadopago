@@ -12,7 +12,7 @@
     "./workflows": "./.medusa/server/src/workflows/index.js",
     "./.medusa/server/src/modules/*": "./.medusa/server/src/modules/*/index.js",
     "./modules/*": "./.medusa/server/src/modules/*/index.js",
-    "./providers/*": "./.medusa/server/src/providers/*/index.js",
+    "./providers": "./.medusa/server/src/providers/index.js",
     "./admin": {
       "import": "./.medusa/server/src/admin/index.mjs",
       "require": "./.medusa/server/src/admin/index.js",

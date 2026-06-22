@@ -1,6 +1,5 @@
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk";
-import { PaymentCreateRequest } from "mercadopago/dist/clients/payment/create/types";
-import MercadopagoProviderService from "../../../providers/mercado-pago/service";
+import MercadopagoProviderService from "../../../providers/services/mercadopago-provider";
 import {
   MedusaError,
   MedusaErrorTypes,
@@ -11,7 +10,7 @@ import { PaymentSessionDTO } from "@medusajs/framework/types";
 
 type CreatePaymentStepInput = {
   paymentSessionId: string;
-  paymentData: PostStoreMercadopagoPaymentType['paymentData'];
+  paymentData: PostStoreMercadopagoPaymentType["paymentData"];
 };
 
 export const createPaymentStep = createStep<
@@ -21,12 +20,11 @@ export const createPaymentStep = createStep<
 >(
   "create-mercado-pago-payment",
   async ({ paymentSessionId, paymentData }, { container }) => {
-
     const mercadopagoPaymentProvider = container
       .resolve("payment")
       //@ts-ignore
       .paymentProviderService_.retrieveProvider(
-        "pp_mercadopago_mercadopago"
+        "pp_mercadopago_mercadopago",
       ) as MercadopagoProviderService;
     const paymentModuleService = container.resolve(Modules.PAYMENT);
 
@@ -37,12 +35,12 @@ export const createPaymentStep = createStep<
         filters: {
           id: paymentSessionId,
         },
-      }
+      },
     );
     if (!paymentSession) {
       throw new MedusaError(
         MedusaErrorTypes.NOT_FOUND,
-        `Payment session with id ${paymentSessionId} was not found`
+        `Payment session with id ${paymentSessionId} was not found`,
       );
     }
 
@@ -50,7 +48,7 @@ export const createPaymentStep = createStep<
       paymentSessionId,
       payload: paymentData,
     });
-    
+
     const updatedSession = await paymentModuleService.updatePaymentSession({
       id: paymentSessionId,
       amount: paymentSession.amount,
@@ -58,5 +56,5 @@ export const createPaymentStep = createStep<
       data: paymentResponse as unknown as Record<string, unknown>,
     });
     return new StepResponse(updatedSession);
-  }
+  },
 );

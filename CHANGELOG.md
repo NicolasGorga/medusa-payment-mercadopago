@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Changed
+- Restructured the plugin around a shared `MercadopagoBase` so it can expose multiple payment providers: a regular card provider (`mercadopago`) and a new recurring/subscription provider (`mercadopago-subscription`). Both are registered from a single entry point and become independently selectable at checkout.
+  - **BREAKING:** the provider `resolve` path changed from `@nicogorga/medusa-payment-mercadopago/providers/mercado-pago` to `@nicogorga/medusa-payment-mercadopago/providers`. Update the `providers` array in `medusa-config` accordingly. The regular provider keeps its id (`mercadopago`), so existing payment provider ids (`pp_mercadopago_mercadopago`) are unchanged.
 
 ## 0.3.0 - 2026-06-22
 ### Added

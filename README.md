@@ -84,7 +84,7 @@ Receive payments on your Medusa commerce application using Mercado Pago.
       options: {
         providers: [
           {
-            resolve: '@nicogorga/medusa-payment-mercadopago/providers/mercado-pago',
+            resolve: '@nicogorga/medusa-payment-mercadopago/providers',
             id: 'mercadopago',
             options: {
               accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
@@ -99,6 +99,15 @@ Receive payments on your Medusa commerce application using Mercado Pago.
     }
   ],
 ```
+
+The single `providers` entry registers two payment providers that share a common base:
+
+| Provider | Payment provider id | Use case |
+| --- | --- | --- |
+| Regular payments | `pp_mercadopago_mercadopago` | One-off card payments |
+| Recurring payments | `pp_mercadopago_mercadopago-subscription` | Mercado Pago subscriptions |
+
+Both become selectable at checkout — enable whichever you need per region/payment configuration. They share the `options` block above.
 
 ---
 
