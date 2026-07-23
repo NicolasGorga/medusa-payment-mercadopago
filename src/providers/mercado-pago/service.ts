@@ -101,42 +101,30 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
   async authorizePayment(
     input: AuthorizePaymentInput
   ): Promise<AuthorizePaymentOutput> {
-    const paymentSessionId = input.data?.session_id as string | undefined;
-    let data: PaymentSearchResult = input.data ?? {};
-
-    if (!paymentSessionId) {
-      throw new MedusaError(
-        MedusaErrorTypes.INVALID_DATA,
-        "No payment session id found in data"
-      );
+    const data = (input.data ?? {}) as PaymentSearchResult & {
+      id?: string | number
     }
 
-    const payment = new Payment(this.client_);
-    const results =
-      ((
-        await payment.search({
-          options: { 
-            external_reference: paymentSessionId,
-            sort: 'date_approved',
-            criteria: 'desc'
-          },
-        })
-        // Ideally, this would be done in the call to Mercado Pago, but they don't expose an option
-        // to filter based on status
-      )?.results ?? []).filter(payment => payment.status === 'approved');
-    if (!results.length) {
-      this.logger_.warn(
-        `No payment found in Mercado Pago for payment session: ${paymentSessionId}\n This could be caused by lag in Mercado Pago's system and doesn't mean the payment was not created`
-      );
+    // Without a Mercado Pago payment id in the session, the payment flow never
+    // ran (e.g. the cart was completed without going through the payment step,
+    // or by calling POST /store/carts/:id/complete directly). Do NOT authorize:
+    // this prevents creating a "paid" order for a payment that doesn't exist.
+    if (!data.id) {
+      return { data, status: PaymentSessionStatus.PENDING }
     }
-    data = results[0] ?? data;
 
-    // Returning PaymentSessionStatus.CAPTURED for auto capture, since for UY card method they are captured automatically
-    // TODO: Should make it conditionally in cases where a method could be not auto captured (maybe cash or another country)
+    // Query the REAL payment status by id (no search-indexing lag) and return
+    // the mapped status instead of assuming CAPTURED. getPaymentStatus already
+    // maps: approved -> captured, rejected -> error, in_process/pending ->
+    // pending, cancelled/refunded -> canceled.
+    const { status, data: statusData } = await this.getPaymentStatus({
+      data,
+    } as GetPaymentStatusInput)
+
     return {
-      data: data,
-      status: PaymentSessionStatus.CAPTURED,
-    };
+      data: statusData as PaymentSearchResult,
+      status: status as PaymentSessionStatus,
+    }
   }
 
   async capturePayment(
