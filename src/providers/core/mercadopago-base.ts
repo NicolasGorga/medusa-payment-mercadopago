@@ -315,7 +315,11 @@ abstract class MercadopagoBase extends AbstractPaymentProvider<MercadopagoOption
         const { results } = await customerClient.search({ options: { email: customer.email}})
         mercadopagoCustomer = results![0]
       } else {
-        throw new MedusaError(MedusaErrorTypes.UNEXPECTED_STATE, "An error occurred while trying to create a Mercado Pago customer")
+        const cause = error.cause?.map(c => `${c.code}: ${c.description}`).join(", ") ?? error.message
+
+        this.logger_.error(`Mercado Pago customer creation failed for ${customer.email} - ${cause}`)
+
+        throw new MedusaError(MedusaErrorTypes.UNEXPECTED_STATE, `An error occurred while trying to create a Mercado Pago customer: ${cause}`)
       }
     }
 
@@ -367,7 +371,7 @@ abstract class MercadopagoBase extends AbstractPaymentProvider<MercadopagoOption
         data: updatedCustomer as unknown as Record<string, unknown>,
       }
     } catch (e) {
-      throw new MedusaError(MedusaErrorTypes.UNEXPECTED_STATE, "An error occurred in updateAccountHolder when updating a Stripe customer")
+      throw new MedusaError(MedusaErrorTypes.UNEXPECTED_STATE, "An error occurred in updateAccountHolder when updating a Mercado Pago customer")
     }
   }
 

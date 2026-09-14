@@ -10,6 +10,7 @@ import { PaymentSessionDTO } from "@medusajs/framework/types";
 
 type CreatePaymentStepInput = {
   paymentSessionId: string;
+  providerId: string;
   paymentData: PostStoreMercadopagoPaymentType["paymentData"];
 };
 
@@ -19,12 +20,12 @@ export const createPaymentStep = createStep<
   undefined
 >(
   "create-mercado-pago-payment",
-  async ({ paymentSessionId, paymentData }, { container }) => {
+  async ({ paymentSessionId, providerId, paymentData }, { container }) => {
     const mercadopagoPaymentProvider = container
       .resolve("payment")
       //@ts-ignore
       .paymentProviderService_.retrieveProvider(
-        "pp_mercadopago_mercadopago",
+        providerId,
       ) as MercadopagoProviderService;
     const paymentModuleService = container.resolve(Modules.PAYMENT);
 
