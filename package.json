@@ -10,9 +10,10 @@
   "exports": {
     "./package.json": "./package.json",
     "./workflows": "./.medusa/server/src/workflows/index.js",
+    "./types": "./.medusa/server/src/types/index.js",
     "./.medusa/server/src/modules/*": "./.medusa/server/src/modules/*/index.js",
     "./modules/*": "./.medusa/server/src/modules/*/index.js",
-    "./providers/*": "./.medusa/server/src/providers/*/index.js",
+    "./providers": "./.medusa/server/src/providers/index.js",
     "./admin": {
       "import": "./.medusa/server/src/admin/index.mjs",
       "require": "./.medusa/server/src/admin/index.js",
@@ -38,38 +39,38 @@
     "prepublishOnly": "medusa plugin:build"
   },
   "devDependencies": {
-    "@medusajs/admin-sdk": "2.16.0",
-    "@medusajs/cli": "2.16.0",
-    "@medusajs/eslint-plugin": "2.16.0",
-    "@medusajs/framework": "2.16.0",
-    "@medusajs/medusa": "2.16.0",
-    "@medusajs/test-utils": "2.16.0",
-    "@medusajs/icons": "2.16.0",
-    "@medusajs/ui": "4.1.16",
-    "@swc/core": "1.5.7",
-    "eslint": "^9.0.0",
-    "jiti": "^2.0.0",
+    "@medusajs/admin-sdk": "2.21.0",
+    "@medusajs/cli": "2.21.0",
+    "@medusajs/eslint-plugin": "2.21.0",
+    "@medusajs/framework": "2.21.0",
+    "@medusajs/icons": "2.21.0",
+    "@medusajs/medusa": "2.21.0",
+    "@medusajs/test-utils": "2.21.0",
+    "@medusajs/ui": "4.2.4",
+    "@swc/core": "^1.7.28",
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.2.25",
+    "eslint": "^9.0.0",
+    "jiti": "^2.0.0",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.2",
-    "vite": "^5.2.11",
+    "vite": "^7.3.6",
     "yalc": "^1.0.0-pre.53"
   },
   "peerDependencies": {
-    "@medusajs/admin-sdk": "2.16.0",
-    "@medusajs/cli": "2.16.0",
-    "@medusajs/framework": "2.16.0",
-    "@medusajs/medusa": "2.16.0",
-    "@medusajs/icons": "2.16.0",
-    "@medusajs/ui": "4.1.16"
+    "@medusajs/admin-sdk": "2.21.0",
+    "@medusajs/cli": "2.21.0",
+    "@medusajs/framework": "2.21.0",
+    "@medusajs/icons": "2.21.0",
+    "@medusajs/medusa": "2.21.0",
+    "@medusajs/ui": "4.2.4"
   },
   "engines": {
-    "node": ">=20.19"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "dependencies": {
     "mercadopago": "^2.3.0"

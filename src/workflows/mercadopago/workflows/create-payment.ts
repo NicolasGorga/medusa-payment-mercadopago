@@ -56,10 +56,16 @@ export const createMercadopagoPaymentWorkflow = createWorkflow(
 
     validateTransactionAmountStep(validateTransactionStepInput);
 
-    const updatedPaymentSession = createPaymentStep({
-      paymentSessionId,
-      paymentData,
-    });
+    const createPaymentStepInput = transform(
+      { paymentSession, paymentSessionId, paymentData },
+      ({ paymentSession, paymentSessionId, paymentData }) => ({
+        paymentSessionId,
+        providerId: paymentSession.provider_id as string,
+        paymentData,
+      })
+    );
+
+    const updatedPaymentSession = createPaymentStep(createPaymentStepInput);
 
     const { data: customer } = useQueryGraphStep({
       entity: "customer",
@@ -82,7 +88,7 @@ export const createMercadopagoPaymentWorkflow = createWorkflow(
 		return customer.account_holders?.filter(accountHolder => accountHolder.provider_id === paymentSession.provider_id)?.[0] as AccountHolderDTO | undefined
 	})
 
-	when({ customerId, customer, existentAccountHolder }, (data) => {
+	when("has-existing-account-holder", { customerId, customer, existentAccountHolder }, (data) => {
 		return !!data.customerId && !!data.customer && !!data.existentAccountHolder
 	}).then(() => {
 		const paymentCustomer = transform({ customer }, (data) => {
