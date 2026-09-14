@@ -52,8 +52,9 @@ type InjectedDependencies = {
   logger: Logger;
 };
 
-class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOptions> {
-  static identifier = "mercadopago";
+// ponytail: base holds the full card-payment implementation. The regular provider extends it with
+// only an `identifier`; the subscription provider overrides the lifecycle methods that differ.
+abstract class MercadopagoBase extends AbstractPaymentProvider<MercadopagoOptions> {
   protected options_: MercadopagoOptions;
   protected client_: MercadoPagoConfig;
   protected logger_: Logger;
@@ -115,7 +116,7 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
     const results =
       ((
         await payment.search({
-          options: { 
+          options: {
             external_reference: paymentSessionId,
             sort: 'date_approved',
             criteria: 'desc'
@@ -292,7 +293,7 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
 
     const customerClient = new Customer(this.client_);
     let mercadopagoCustomer: CustomerResponse | undefined
-    
+
     try {
       const body: CustomerRequestBody = {
         email: customer.email,
@@ -314,7 +315,11 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
         const { results } = await customerClient.search({ options: { email: customer.email}})
         mercadopagoCustomer = results![0]
       } else {
-        throw new MedusaError(MedusaErrorTypes.UNEXPECTED_STATE, "An error occurred while trying to create a Mercado Pago customer")
+        const cause = error.cause?.map(c => `${c.code}: ${c.description}`).join(", ") ?? error.message
+
+        this.logger_.error(`Mercado Pago customer creation failed for ${customer.email} - ${cause}`)
+
+        throw new MedusaError(MedusaErrorTypes.UNEXPECTED_STATE, `An error occurred while trying to create a Mercado Pago customer: ${cause}`)
       }
     }
 
@@ -358,7 +363,7 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
         requestOptions: {
           idempotencyKey: idempotency_key,
         }
-      } 
+      }
 
       const updatedCustomer = await customerClient.update(payload);
 
@@ -366,7 +371,7 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
         data: updatedCustomer as unknown as Record<string, unknown>,
       }
     } catch (e) {
-      throw new MedusaError(MedusaErrorTypes.UNEXPECTED_STATE, "An error occurred in updateAccountHolder when updating a Stripe customer")
+      throw new MedusaError(MedusaErrorTypes.UNEXPECTED_STATE, "An error occurred in updateAccountHolder when updating a Mercado Pago customer")
     }
   }
 
@@ -390,8 +395,8 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
     // for now, the step that calls this method has a try / catch, to allow the Payment to cotinue even if this fails
     const created = await card.create({
       customerId: accountHolderId,
-      body: { 
-        token: paymentMethodData.token, 
+      body: {
+        token: paymentMethodData.token,
       },
       requestOptions: {
         idempotencyKey: context?.idempotency_key
@@ -523,4 +528,4 @@ class MercadopagoProviderService extends AbstractPaymentProvider<MercadopagoOpti
   }
 }
 
-export default MercadopagoProviderService;
+export default MercadopagoBase;

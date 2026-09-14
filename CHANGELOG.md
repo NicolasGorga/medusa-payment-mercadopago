@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Recurring payments via Mercado Pago Subscriptions (preapproval) through the new `mercadopago-subscription` provider (`pp_mercadopago-subscription_mercadopago`): the client passes the Payment Brick card token and `auto_recurring` config as session `data` when (re)initiating the payment session, `initiatePayment` creates the preapproval (amount/currency always taken from the session), and the regular cart completion authorizes it. The payment captures when the first charge webhook arrives.
+- Webhooks flow through Medusa's standard `/hooks/payment/mercadopago-subscription_<id>`. The subscription provider handles all Mercado Pago topics — it maps subscription notifications itself and delegates the `payment` topic to the card implementation — so one webhook URL serves both providers (Mercado Pago allows a single URL per application). While handling them it re-emits `mercadopago.subscription.updated` and `mercadopago.subscription.charge.updated` on the event bus (at-least-once delivery) so any subscription engine can consume recurring charge outcomes.
+- Medusa's standard refund on a subscription payment refunds the most recent charged cycle at Mercado Pago; older cycles are refunded directly at Mercado Pago using the payment id from the charge events.
+- `/types` package export with the event names and payload types.
+
+### Changed
+
+- Restructured the plugin around a shared `MercadopagoBase` so it can expose multiple payment providers: a regular card provider (`mercadopago`) and a new recurring/subscription provider (`mercadopago-subscription`). Both are registered from a single entry point and become independently selectable at checkout.
+  - **BREAKING:** the provider `resolve` path changed from `@nicogorga/medusa-payment-mercadopago/providers/mercado-pago` to `@nicogorga/medusa-payment-mercadopago/providers`. Update the `providers` array in `medusa-config` accordingly. The regular provider keeps its id (`mercadopago`), so existing payment provider ids (`pp_mercadopago_mercadopago`) are unchanged.
+- The create-payment workflow step now resolves the provider from the payment session's `provider_id` instead of a hardcoded id.
+
+### Chore
+
+- Upgraded to Medusa 2.21.0 (from 2.16.0). Peer dependencies now require `@medusajs/*` 2.21.0 and `@medusajs/ui` 4.2.4, and `engines.node` is `^20.19.0 || >=22.12.0` to match the Node floor Medusa 2.19 introduced with Vite 7.
+
+## 0.3.0 - 2026-06-22
+
+### Added
+
 - Upgraded to Medusa 2.16.0
 
 ## 0.2.6 - 2025-10-22
