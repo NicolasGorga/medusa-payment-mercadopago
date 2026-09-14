@@ -19,10 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Restructured the plugin around a shared `MercadopagoBase` so it can expose multiple payment providers: a regular card provider (`mercadopago`) and a new recurring/subscription provider (`mercadopago-subscription`). Both are registered from a single entry point and become independently selectable at checkout.
   - **BREAKING:** the provider `resolve` path changed from `@nicogorga/medusa-payment-mercadopago/providers/mercado-pago` to `@nicogorga/medusa-payment-mercadopago/providers`. Update the `providers` array in `medusa-config` accordingly. The regular provider keeps its id (`mercadopago`), so existing payment provider ids (`pp_mercadopago_mercadopago`) are unchanged.
 - The create-payment workflow step now resolves the provider from the payment session's `provider_id` instead of a hardcoded id.
-
-### Chore
-
-- Upgraded to Medusa 2.21.0 (from 2.16.0). Peer dependencies now require `@medusajs/*` 2.21.0 and `@medusajs/ui` 4.2.4, and `engines.node` is `^20.19.0 || >=22.12.0` to match the Node floor Medusa 2.19 introduced with Vite 7.
+- **Chore:** upgraded to Medusa 2.21.0 (from 2.16.0). Peer dependencies now require `@medusajs/*` 2.21.0 and `@medusajs/ui` 4.2.4, and `engines.node` is `^20.19.0 || >=22.12.0` to match the Node floor Medusa 2.19 introduced with Vite 7.
+  - Note for consumers: since Medusa 2.20, `createPaymentSessionsWorkflow` rejects a `provider_id` that is not enabled in the cart's region, so both `pp_mercadopago_mercadopago` and `pp_mercadopago-subscription_mercadopago` must be linked to every region that offers them.
 
 ## 0.3.0 - 2026-06-22
 
